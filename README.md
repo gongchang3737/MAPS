@@ -1,7 +1,7 @@
-# ILP-LBL
-paper-Source Detection in Multilayer Task Networks for High-End Equip- ment Development
+# MAPS
+MAPS: Multiscale Source Detection in Multilayer Affiliation Networks
 
-Last Updated: May 7, 2026
+Last Updated: Sept 19, 2026
 
 # Framework Structure Overview
 
