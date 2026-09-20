@@ -1,8 +1,20 @@
 # 使用gurobi求解器求解最小源集合问题
 # 硬约束版本：必须覆盖所有故障，且不能触达健康
 # 软约束版本：允许未覆盖故障和触达健康，但会有惩罚
-import gurobipy as gp
-from gurobipy import GRB
+try:
+    import gurobipy as gp
+    from gurobipy import GRB
+except ModuleNotFoundError:
+    gp = None
+    GRB = None
+
+
+def _require_gurobi():
+    if gp is None:
+        raise RuntimeError(
+            "ILP requires the optional 'gurobipy' package and a usable Gurobi "
+            "license. LPSI and the other non-ILP methods do not require it."
+        )
 
 def reachable_sets(adj, nodes):
     """返回每个节点的可达集 R(v)。adj: {u: [v1, v2, ...]}"""
@@ -79,6 +91,7 @@ def ilp_min_source_cover_hard(adj, failed, healthy=None, cardinality_constraint=
       - 任一被选候选源 v 的可达集不得包含 healthy 中的点
     返回: (选中的源集合 S*, 模型对象)
     """
+    _require_gurobi()
     failed = set(failed)
     H = set(healthy) if healthy else set()
 
@@ -141,6 +154,7 @@ def ilp_min_source_cover_soft_prob(adj, failed, healthy=None, cardinality_constr
       - z_u ∈ {0,1} 表示故障 u 是否未被覆盖
       - y_w ∈ {0,1} 表示是否选了触达健康节点 w 的源（合并统计）
     """
+    _require_gurobi()
     failed = set(failed)
     H = set(healthy) if healthy else set()
 
@@ -238,6 +252,7 @@ def ilp_min_source_cover_soft(adj, failed, healthy=None, cardinality_constraint=
       - z_u ∈ {0,1} 表示故障 u 是否未被覆盖
       - y_w ∈ {0,1} 表示是否选了触达健康节点 w 的源（合并统计）
     """
+    _require_gurobi()
     failed = set(failed)
     H = set(healthy) if healthy else set()
 
@@ -331,6 +346,7 @@ def ilp_min_source_cover_soft_dynamic(adj, failed, healthy=None, cardinality_con
       - z_u ∈ {0,1} 表示故障 u 是否未被覆盖
       - y_w ∈ {0,1} 表示是否选了触达健康节点 w 的源（合并统计）
     """
+    _require_gurobi()
     failed = set(failed)
     H = set(healthy) if healthy else set()
 
@@ -428,6 +444,7 @@ def ilp_min_source_cover_soft_dynamic_plus(adj, failed, healthy=None, cardinalit
     返回:
       (最佳解, 候选解列表及置信度, 统计信息, 模型对象)
     """
+    _require_gurobi()
     failed = set(failed)
     H = set(healthy) if healthy else set()
 

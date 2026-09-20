@@ -6,6 +6,7 @@ import numpy as np  #当前为numpy=2.0.2,numexpr=2.10.2, pandas=2.3.2
 import copy
 import pandas as pd
 from guro_opt import *
+from lpsi import lpsi_deg_source_identification, lpsi_source_identification
 import time
 # import networkx.utils
 
@@ -250,6 +251,18 @@ class SL:
                 )
                 return list(S_soft)
         
+        if method == 'LPSI':
+            sources, _, _ = lpsi_source_identification(
+                self.graph, source_count=1, **method_params
+            )
+            return sources
+
+        if method == 'LPSI_deg':
+            sources, _, _ = lpsi_deg_source_identification(
+                self.graph, source_count=1, **method_params
+            )
+            return sources
+
         if method == 'label_prop':
             not_done = [node for node in self.graph.nodes if self.graph.nodes[node]['status'] == 1]
             # 同样使用排序确保一致性
@@ -295,14 +308,19 @@ print('节点数：', sl.graph.number_of_nodes(), '边数：', sl.graph.number_o
 
 # 开展溯源实验
 # 初始化参数
-method_list = ['mini_set'] # 选择溯源算法['mini_set', 'label_prop', 'ILP']
+method_list = ['LPSI_deg'] # 选择溯源算法['mini_set', 'label_prop', 'LPSI', 'LPSI_deg', 'ILP']
 method_params = {'mini_set': {},
                  'ILP': {'find_in_failed':1,
                         'cardinality_constraint':[1,1],
                         'alpha_uncovered':1.0,   # 未覆盖故障的惩罚（越大越强制覆盖）
                     'beta_touchH':1.0},    # 触达健康的惩罚（越大越避免误伤）},
-                 'label_prop': {'times':100, 'weight':[1.0, 0.0, 0.0]}}
-noise_list = ['obs_error'] # 添加噪声的类型，[无误差，观测误差，概率传播]=['normal', 'prob_prop', 'obs_error']
+                 'label_prop': {'times':100, 'weight':[1.0, 0.0, 0.0]},
+                 'LPSI': {'alpha':0.5, 'max_iter':5, 'tol':1e-8,
+                          'mode':'iterative', 'graph_mode':'undirected'},
+                 'LPSI_deg': {'alpha':0.5, 'max_iter':5, 'tol':1e-8,
+                              'mode':'iterative', 'graph_mode':'undirected',
+                              'degree_power':1.0, 'degree_normalization':'none'}}
+noise_list = ['normal'] # 添加噪声的类型，[无误差，观测误差，概率传播]=['normal', 'prob_prop', 'obs_error']
 noise_params = {'normal':{},
         'obs_error': {'error_prop':0.05}, 
         'prob_prop': {'prop_prob':0.8}} # 噪声参数

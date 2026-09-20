@@ -6,6 +6,7 @@ import numpy as np  #当前为numpy=2.0.2,numexpr=2.10.2, pandas=2.3.2
 import copy
 import pandas as pd
 from guro_opt import *
+from lpsi import lpsi_deg_source_identification, lpsi_source_identification
 import time
 # import networkx.utils
 import json
@@ -297,6 +298,18 @@ class SL:
                 )
                 return list(S_soft)
         
+        if method == 'LPSI':
+            sources, _, _ = lpsi_source_identification(
+                sin_lay_graph, source_count=None, **method_params
+            )
+            return sources
+
+        if method == 'LPSI_deg':
+            sources, _, _ = lpsi_deg_source_identification(
+                sin_lay_graph, source_count=None, **method_params
+            )
+            return sources
+
         if method == 'label_prop':
             not_done = [node for node in sin_lay_graph.nodes if sin_lay_graph.nodes[node]['status'] == 1]
             # 同样使用排序确保一致性
@@ -368,13 +381,18 @@ time_list = []
 # print(error_prop_list)
 for error_prop in error_prop_list:
     print('=================error_prop:', error_prop, '=================')
-    method_list = ['mini_set'] # 选择溯源算法['mini_set', 'label_prop', 'ILP']
+    method_list = ['LPSI'] # 选择溯源算法['mini_set', 'label_prop', 'LPSI', 'LPSI_deg', 'ILP']
     method_params = {'mini_set': {},
                     'ILP': {'find_in_failed':1,
                         'cardinality_constraint':[1,5], #在多层多源情况下，有时候上层溯源只会产生一个源，这时候如果在下层溯源设定[2,5]的范围，就会报错，应该改为[1,5]
                         'alpha_uncovered':10.0,   # 未覆盖故障的惩罚（越大越强制覆盖）
                         'beta_touchH':10.0},    # 触达健康的惩罚（越大越避免误伤）},
-                    'label_prop': {'times':100, 'weight':[1.0, 0.0, 0.0]}}
+                    'label_prop': {'times':100, 'weight':[1.0, 0.0, 0.0]},
+                    'LPSI': {'alpha':0.5, 'max_iter':5, 'tol':1e-8,
+                             'mode':'iterative', 'graph_mode':'undirected'},
+                    'LPSI_deg': {'alpha':0.5, 'max_iter':5, 'tol':1e-8,
+                                 'mode':'iterative', 'graph_mode':'undirected',
+                                 'degree_power':1.0, 'degree_normalization':'none'}}
     noise_list = ['obs_error'] # 添加噪声的类型，[无误差，观测误差，概率传播]=['normal', 'prob_prop', 'obs_error']
     noise_params = {'normal':{},
             'obs_error': {'error_prop':error_prop},
@@ -419,12 +437,12 @@ for error_prop in error_prop_list:
     time_list.append(toc - tic)
     print('总耗时：', toc - tic)
     # 为避免代码运行中断，及时将结果保存为json文件
-    with open('results/MLSL_multiple_MS_OE_L3.json', 'w') as f:
+    with open('results/MLSL_multiple_'+method_list[0]+'_OE_L'+str(L_num[-1])+'.json', 'w') as f:
         json.dump({'error_prop_list': error_prop_list, 'precision': metric_list, 'time': time_list}, f)
     # k = input()
 
 # 将结果保存为json文件
-with open('results/MLSL_multiple_MS_OE_L3.json', 'w') as f:
+with open('results/MLSL_multiple_'+method_list[0]+'_OE_L'+str(L_num[-1])+'.json', 'w') as f:
     json.dump({'error_prop_list': error_prop_list, 'precision': metric_list, 'time': time_list}, f)
 
 
